@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arjun — Typewriter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#161514;
+    --muted:#6f6b66;
+    --faint:#a8a39d;
+    --line:#e7e3dd;
+    --paper:#ffffff;
+    --mono:'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:var(--mono);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .stage{min-height:100vh; display:flex; flex-direction:column}
+
+  /* top meta bar */
+  .bar{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:26px clamp(28px,6vw,84px) 0;
+    font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--faint);
+  }
+  .bar .mono-dot{display:flex; gap:9px; align-items:center}
+  .bar .mono-dot::before{content:''; width:7px; height:7px; background:var(--ink); border-radius:1px}
+
+  /* views */
+  .view{flex:1; padding:clamp(40px,9vh,120px) clamp(28px,6vw,84px)}
+  .view[hidden]{display:none}
+  .col{max-width:680px}
+
+  /* hero */
+  #hero .col{display:flex; flex-direction:column; min-height:62vh; justify-content:center}
+  .hello{
+    font-size:clamp(34px,5vw,60px); font-weight:500; line-height:1.05;
+    letter-spacing:-.02em; margin:0 0 30px;
+  }
+  .caret{display:inline-block; width:.5em; height:1em; background:var(--ink);
+    margin-left:.06em; transform:translateY(.12em); animation:blink 1.05s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .bio{
+    font-size:clamp(15px,1.15vw,17px); line-height:1.85; color:var(--muted);
+    max-width:60ch; margin:0; font-weight:400;
+  }
+  .bio .term{color:var(--ink)}
+
+  /* hero teaser + more */
+  .teaser{
+    font-size:clamp(15px,1.15vw,17px); line-height:1.85; color:var(--ink);
+    margin:14px 0 0; font-weight:400; max-width:60ch;
+  }
+  .morebtn{
+    appearance:none; border:0; background:none; cursor:pointer; opacity:0;
+    font-family:var(--mono); font-size:14px; letter-spacing:.02em; color:var(--ink);
+    padding:2px 0; margin:18px 0 0; border-bottom:1px solid var(--ink);
+    align-self:flex-start; display:inline-flex; gap:8px; align-items:center;
+  }
+  .morebtn .arr{transition:transform .2s}
+  .morebtn:hover .arr{transform:translateX(4px)}
+  .revealed .teaser{animation:teaserFade 1.8s ease both}
+  .revealed .morebtn{animation:moreIn .6s ease 1.5s both}
+  @keyframes teaserFade{0%{opacity:0; transform:translateY(5px)} 28%{opacity:1; transform:none} 100%{opacity:.4}}
+  @keyframes moreIn{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
+
+  /* about */
+  .about-body{max-width:60ch}
+  .about-body p{font-size:clamp(16px,1.25vw,19px); line-height:1.85; color:var(--muted); margin:0 0 22px; font-weight:400}
+  .about-body p:last-child{margin:0}
+  .about-body .term{color:var(--ink)}
+  .actions{margin-top:46px; display:flex; gap:14px; flex-wrap:wrap}
+  .pbtn{
+    appearance:none; border:1px solid var(--ink); background:transparent;
+    color:var(--ink); font-family:var(--mono); font-size:14px; font-weight:500;
+    letter-spacing:.04em; padding:13px 22px; cursor:pointer;
+    display:inline-flex; gap:12px; align-items:center;
+    transition:background .18s ease, color .18s ease, transform .18s ease, box-shadow .2s ease;
+  }
+  .pbtn:hover{background:var(--ink); color:var(--paper)}
+  .pbtn:active{transform:translateY(1px)}
+  .pbtn .arr{transition:transform .2s ease}
+  .pbtn:hover .arr{transform:translateX(4px)}
+
+  /* projects */
+  .back{
+    appearance:none; border:0; background:none; cursor:pointer;
+    font-family:var(--mono); font-size:13px; letter-spacing:.04em;
+    color:var(--muted); padding:0; margin-bottom:54px;
+    display:inline-flex; gap:10px; align-items:center;
+  }
+  .back:hover{color:var(--ink)}
+  .back .arr{transition:transform .2s}
+  .back:hover .arr{transform:translateX(-4px)}
+  .ptitle{font-size:13px; letter-spacing:.2em; text-transform:uppercase; color:var(--faint); margin:0 0 6px}
+  .pcount{font-size:13px; color:var(--faint); margin:0 0 40px}
+  .grid{
+    display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:36px 44px; max-width:880px;
+  }
+  .card{display:flex; flex-direction:column; gap:16px; cursor:default}
+  .thumb{
+    aspect-ratio:16/10; border:1px solid var(--line); border-radius:2px;
+    background-image:repeating-linear-gradient(45deg,#f4f1ec 0 10px,#fbfaf7 10px 20px);
+    display:flex; align-items:flex-end; padding:12px;
+  }
+  .thumb span{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint)}
+  .card .num{font-size:12px; color:var(--faint); letter-spacing:.1em}
+  .card h3{font-size:17px; font-weight:500; margin:0; letter-spacing:-.01em}
+  .card p{font-size:13px; line-height:1.7; color:var(--faint); margin:0; font-style:italic}
+  .addrow{margin-top:52px; font-size:13px; color:var(--faint)}
+  .addrow b{color:var(--muted); font-weight:500}
+
+  @media (max-width:720px){ .grid{grid-template-columns:1fr} }
+
+  /* blog — Jekyll Minima style */
+  .minima{
+    --mblue:#2a7ae2; --mgrey:#828282; --mtext:#1a1a1a; --mborder:#e8e8e8;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--mtext); max-width:760px;
+  }
+  .minima .back{font-family:inherit; text-transform:none; letter-spacing:0; font-size:15px; color:var(--mgrey)}
+  .minima .back:hover{color:var(--mtext)}
+  .page-title{font-size:34px; font-weight:800; letter-spacing:-1px; line-height:1.15; margin:0 0 6px}
+  .page-sub{color:var(--mgrey); font-size:15px; line-height:1.5; margin:0 0 36px}
+
+  .post-list{list-style:none; margin:0; padding:0}
+  .post-list > li{padding:30px 0; border-bottom:1px solid var(--mborder)}
+  .post-list > li:first-child{border-top:1px solid var(--mborder)}
+  .post-meta{color:var(--mgrey); font-size:14px}
+  .post-link{appearance:none; border:0; background:none; cursor:pointer; padding:0; text-align:left;
+    display:inline-block; margin-top:5px; font-family:inherit; font-size:26px; font-weight:700;
+    letter-spacing:-.6px; line-height:1.2; color:var(--mtext)}
+  .post-link:hover{color:var(--mblue)}
+  .post-excerpt{margin:11px 0 0; color:#454545; font-size:16px; line-height:1.6}
+
+  /* single post */
+  .post-header{margin-bottom:32px}
+  .post-title{font-size:clamp(30px,4.2vw,44px); font-weight:800; letter-spacing:-1.2px; line-height:1.12; margin:0 0 10px}
+  .post-content{font-size:18px; line-height:1.72; color:#1a1a1a}
+  .post-content p{margin:0 0 22px}
+  .post-content em{font-style:italic}
+  .blank{display:inline-block; min-width:88px; border-bottom:1px solid var(--mgrey); vertical-align:bottom}
+  .post-foot{margin-top:40px; padding-top:22px; border-top:1px solid var(--mborder); color:var(--mgrey); font-size:14px}
+
+  /* spotify */
+  #spotify{padding-bottom:130px}
+  .pl-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:30px; max-width:980px}
+  .pl-card{display:flex; flex-direction:column; gap:15px}
+  .pl-cover{
+    aspect-ratio:1; background:var(--ink); color:var(--paper); border-radius:2px;
+    display:flex; flex-direction:column; justify-content:space-between; padding:16px;
+  }
+  .pl-cover .kick{font-size:10px; letter-spacing:.22em; text-transform:uppercase; opacity:.55}
+  .pl-cover .glyph{font-size:46px; line-height:1; align-self:flex-end}
+  .pl-name{font-size:16px; font-weight:600; margin:0; letter-spacing:-.01em}
+  .pl-meta{font-size:12px; color:var(--faint); letter-spacing:.03em; margin:3px 0 0}
+  .pl-note{font-size:13.5px; line-height:1.72; color:var(--muted); font-style:italic;
+    margin:4px 0 0; padding-top:14px; border-top:1px solid var(--line)}
+  @media (max-width:760px){ .pl-grid{grid-template-columns:1fr} }
+
+  /* hidden Spotify audio engine */
+  #sp-engine{position:fixed; right:0; bottom:0; width:320px; height:160px; opacity:0; pointer-events:none; z-index:-1}
+
+  /* soundbar (typewriter-themed, drives the Spotify preview) */
+  .sbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:60;
+    display:flex; align-items:center; gap:18px;
+    padding:13px clamp(20px,5vw,40px);
+    background:var(--paper); border-top:1px solid var(--ink); font-family:var(--mono);
+  }
+  .sbar[hidden]{display:none}
+  .sbar-art{width:46px; height:46px; flex:none; border:1px solid var(--ink); overflow:hidden; background:#eee}
+  .sbar-art img{width:100%; height:100%; object-fit:cover; display:block}
+  .sbar-play{flex:none; width:42px; height:42px; border:0; background:#1DB954; color:#06210f;
+    border-radius:50%; cursor:pointer; font-size:14px; display:grid; place-items:center;
+    transition:transform .12s ease}
+  .sbar-play:hover{transform:scale(1.06)} .sbar-play:active{transform:scale(.95)}
+  .sbar-mid{flex:1; min-width:0}
+  .sbar-metarow{display:flex; align-items:center; gap:10px; font-size:12.5px; margin-bottom:8px;
+    white-space:nowrap; overflow:hidden}
+  .sbar-title{font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis}
+  .sbar-by{color:var(--faint); overflow:hidden; text-overflow:ellipsis}
+  .sbar-track{height:3px; background:var(--line); cursor:pointer; position:relative}
+  .sbar-fill{height:100%; width:0; background:var(--ink)}
+  .sbar-time{font-size:11px; color:var(--faint); flex:none; width:34px; text-align:right}
+  .sbar-shuffle{flex:none; appearance:none; border:1px solid var(--ink); background:transparent;
+    cursor:pointer; font-family:var(--mono); font-size:11px; letter-spacing:.08em;
+    text-transform:uppercase; padding:8px 12px; color:var(--ink)}
+  .sbar-shuffle:hover{background:var(--ink); color:var(--paper)}
+  .sbar-eq{display:inline-flex; gap:2px; align-items:flex-end; height:13px; flex:none}
+  .sbar-eq i{width:2.5px; background:#1DB954; height:30%; display:block; animation:eq .9s ease-in-out infinite}
+  .sbar-eq i:nth-child(2){animation-delay:.18s}
+  .sbar-eq i:nth-child(3){animation-delay:.36s}
+  .sbar-eq i:nth-child(4){animation-delay:.09s}
+  .sbar:not(.playing) .sbar-eq i{animation-play-state:paused; height:30%}
+  @keyframes eq{0%,100%{height:25%}50%{height:100%}}
+  .sbar-link{flex:none; font-size:11px; color:var(--faint); text-decoration:none; letter-spacing:.03em}
+  .sbar-link:hover{color:var(--ink)}
+  @media (max-width:680px){ .sbar-shuffle,.sbar-link{display:none} }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="bar">
+      <div class="mono-dot">ARJUN</div>
+      <div>UW · EE + PHILOSOPHY</div>
+    </div>
+
+    <!-- HERO -->
+    <section class="view" id="hero">
+      <div class="col">
+        <h1 class="hello">Hello, i'm Arjun.<span class="caret"></span></h1>
+        <p class="bio">I am a third-year electrical engineering and philosophy student at the University of Washington. I like <span class="term">robotics</span> and <span class="term">advaita-mīmāṃsā</span>. I work on UW's Robotics software team, where I led a ground-up rework of the core robot software in <span class="term">ROS2</span> with autonomous capabilities.</p>
+        <p class="bio teaser">I can orchestrate agents.</p>
+        <button class="morebtn" data-go="about">more… <span class="arr">→</span></button>
+        <div class="actions">
+          <button class="pbtn" data-go="projects">projects <span class="arr">→</span></button>
+          <button class="pbtn" data-go="blog">blogs <span class="arr">→</span></button>
+          <button class="pbtn" data-go="spotify">spotify <span class="arr">→</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="view" id="about" hidden>
+      <div class="col">
+        <button class="back" data-go="hero"><span class="arr">←</span> back</button>
+        <p class="ptitle">About</p>
+        <div class="about-body">
+          <p>I am a third-year electrical engineering and philosophy student at the University of Washington. I like <span class="term">robotics</span> and <span class="term">advaita-mīmāṃsā</span>.</p>
+          <p>I work on UW's Robotics software team, where I handled a team on a ground-up rework of the core robot software in <span class="term">ROS2</span> with autonomous capabilities. I can orchestrate agents.</p>
+          <p>I like classical <span class="term">Bharatiya music</span>, and I like <span class="term">Sanskrit literature</span>.</p>
+          <p>I love forests and wildlife, and working on <span class="term">tiger conservation</span> is one of the biggest goals of my life. I volunteer with the <span class="term">Sahyadri Tiger Reserve</span>, and plan on doing so for the rest of my life.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section class="view" id="projects" hidden>
+      <div class="col" style="max-width:none">
+        <button class="back" data-go="hero"><span class="arr">←</span> back</button>
+        <p class="ptitle">Projects</p>
+        <p class="pcount">04 — selected work · drop in shots & notes anytime</p>
+        <div class="grid" id="pgrid"></div>
+        <p class="addrow"><b>+</b> add a project</p>
+      </div>
+    </section>
+
+    <!-- SPOTIFY -->
+    <section class="view" id="spotify" hidden>
+      <div class="col" style="max-width:none">
+        <button class="back" data-go="hero"><span class="arr">←</span> back</button>
+        <p class="ptitle">On repeat</p>
+        <p class="pcount">three playlists that map how i listen · a preview plays below</p>
+        <div class="pl-grid" id="plgrid"></div>
+      </div>
+    </section>
+
+    <!-- BLOG (Jekyll Minima style) -->
+    <section class="view" id="blog" hidden>
+      <div class="col minima">
+        <button class="back" data-go="hero"><span class="arr">←</span> back</button>
+        <h2 class="page-title">blogs</h2>
+        <p class="page-sub">notes on books and ideas that i happen to stumble on!</p>
+        <ul class="post-list" id="postlist"></ul>
+      </div>
+    </section>
+
+    <!-- POST: Meghadūta -->
+    <section class="view" id="post-meghaduta" hidden>
+      <div class="col minima">
+        <button class="back" data-go="blog"><span class="arr">←</span> all posts</button>
+        <header class="post-header">
+          <h1 class="post-title">I read Meghadūta, but did I read Meghadūta?</h1>
+          <p class="post-meta">Jun 18, 2026 · ~6 min read</p>
+        </header>
+        <article class="post-content">
+          <p>As is the case with YouTube recommendations &mdash; and with life &mdash; you never know what might stumble in front of you. So a video from Vikas Divyakirti talking about Kalidasa vs. Tulsidas popped up in my feed. I was pleasantly surprised by the decisiveness with which Vikas called Kalidasa the greatest literary figure India has produced. My initial reaction was that surely he meant the greatest in a single language, or in a particular period; but he meant it in the truest sense. Kalidasa, for him &mdash; and, as I soon learned, by consensus among literary critics &mdash; is the greatest literary figure Bharat has produced. I refused to believe it: there was no way he beats Vyasa, or the countless Vedic sages, or Tukaram. I decided to trust Vikas's authority and accept the claim &mdash; but I wanted to test it for myself.</p>
+          <p>Coincidentally, around the same time, a friend invited me to a function at my university for the launch of a Sanskrit edition of the <em>Gita Govinda</em>. That, coupled with my initial intrigue about poetic Sanskrit literature, pushed me to pick up the <span class="blank" title="edition / translator">&nbsp;</span> copy of <em>Meghadūta</em>.</p>
+          <p>I genuinely expected the book to be far bigger than it turned out to be. I also already knew the main premise: a man asking a cloud to be his messenger. Even so, I was struck by how the whole story &mdash; or rather the poem &mdash; is structured. I was impressed that all of it is a single monologue delivered by the yaksha. I liked how it splits into distinct parts: the first twelve verses set up the premise; the next seventy or eighty give an exquisite account of Bharat's landscape; then a section paints his hometown of Alaka. It all culminates in his message to his <em>nāyikā</em>, which speaks exquisitely of love and separation and offers a wonderful portrait of a beautiful woman.</p>
+          <p>I am a visual reader. What truly impresses me in a piece of writing is how well the author can generate a world and express it. I love metaphors and similes, and Kalidasa has nailed them in <em>Meghadūta</em>. His way of crafting a story and building images out of all of nature &mdash; and everything in it &mdash; is genuinely wonderful. He uses the landscape of Bharat, its cities, its women, its flora and fauna to build an impeccable world, and he stays true to the erotic, sensual nature that underscores it all. The double-meaning quality of everything is what sells the poem to me. I keep thinking back to the original listeners and readers of this work, wondering what their outlook on this kind of writing must have been. I am amazed by the aesthetics involved: peacocks, flowers, trees, and wonderful olfactory, auditory, and tactile sensations are evoked to produce a living piece of literature. The overarching use of a cloud as a messenger is itself a testament to Bharat's wondrous monsoon, and how it stands for the onset of the season of love. The focus on the cloud drinking water from rivers is a metaphor for its intercourse with the river-goddess personification &mdash; beautiful, again, because this poet does not shy away from indulging the <em>kāma</em> aspect of life.</p>
+          <p>It is the non-linear, structurally and metaphorically convoluted sentences that appeal to me. And yet everything I read &mdash; and ultimately appreciated &mdash; was through an English translation. Though I read the translator's foreword, and he did say he would try to retain the structure, I still felt a major disconnect between me and Kalidasa. I didn't read Kalidasa, nor did I read a Sanskrit poem. I read something else &mdash; a lesser copy, through a lesser language. I believe Sanskrit provides a far more useful framework for the literary style I really enjoy: in it, the double meaning is not an accident or something that merely happens, as in English &mdash; it is intentional. That is what I think I missed. The fact that every Sanskrit <em>kāvya</em> is composed in a meter only adds to the inauthenticity of reading an English translation in prose. So I will revisit <em>Meghadūta</em>. I will read it in Sanskrit &mdash; and only then will I truly be able to appreciate, or even understand, why people say Kalidasa is the greatest literary figure Bharat has given birth to.</p>
+          <p class="post-foot">Filed under: books · Sanskrit · Kalidasa</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <!-- hidden Spotify audio source + themed soundbar -->
+  <div id="sp-engine"><div id="sp-embed"></div></div>
+  <div class="sbar" id="sbar" hidden>
+    <div class="sbar-art"><img id="sbArt" alt="" src="https://i.scdn.co/image/ab67616d0000b27319497200ef054bccfab27d0c"></div>
+    <button class="sbar-play" id="sbPlay" aria-label="Play / pause">▶</button>
+    <div class="sbar-mid">
+      <div class="sbar-metarow">
+        <span class="sbar-eq"><i></i><i></i><i></i><i></i></span>
+        <span class="sbar-title" id="sbTitle">—</span>
+        <span class="sbar-by" id="sbArtist"></span>
+      </div>
+      <div class="sbar-track" id="sbTrack"><div class="sbar-fill" id="sbFill"></div></div>
+    </div>
+    <div class="sbar-time" id="sbTime">0:00</div>
+    <button class="sbar-shuffle" id="sbShuffle">↺ shuffle</button>
+    <a class="sbar-link" id="sbLink" href="#" target="_blank" rel="noopener">preview · Spotify</a>
+  </div>
+
+  <script src="assets/intro.js"></script>
+  <script>
+    const PROJECTS = [
+      ['01','FPGA Audio Visualizer','Real-time spectrum rendering on programmable logic.'],
+      ['02','Autonomous Drone Control','Onboard flight stack with autonomous navigation.'],
+      ['03','HVAC Systems Maintenance Predictor','Predictive maintenance from sensor telemetry.'],
+      ['04','Altium Roland SP-404','A hardware sampler reimagined in Altium.'],
+    ];
+    const grid = document.getElementById('pgrid');
+    grid.innerHTML = PROJECTS.map(([n,t,d])=>`
+      <article class="card">
+        <div class="thumb"><span>project shot</span></div>
+        <div class="num">${n}</div>
+        <h3>${t}</h3>
+        <p>${d}</p>
+      </article>`).join('');
+
+    const POSTS = [
+      ['post-meghaduta','Jun 18, 2026','I read Meghadūta, but did I read Meghadūta?',
+       'On Kalidasa, the season of love, and the quiet loss of reading a Sanskrit poem in English.'],
+    ];
+    document.getElementById('postlist').innerHTML = POSTS.map(([id,date,title,excerpt])=>`
+      <li>
+        <span class="post-meta">${date}</span><br>
+        <button class="post-link" data-go="${id}">${title}</button>
+        <p class="post-excerpt">${excerpt}</p>
+      </li>`).join('');
+
+    // ---- Spotify: playlist cards + themed soundbar -------------------------
+    const SP_ARTIST = 'Peter Cat Recording Co.';
+    // Bismillah (2019) track ids — the soundbar streams a random 30s preview
+    const TRACKS = [
+      ['35592qATAP1u72mO9oelLc','Where the Money Flows'],
+      ['556jf0hyPQuLNHuNWo12I5','Floated By'],
+      ['4U5TPHqsmvVzc8CCZPLfzg','Soulless Friends'],
+      ['3FG44adkUaqTJr8N8ObzxV','Vishnu <3'],
+      ['024nqC9O76nvAuIWtQGdQy','Memory Box'],
+      ['76H0NUgrzR4h2R6wMT2LyI','Freezing'],
+      ['5VgoYN2PNwcRIbxCzmeri0','Heera'],
+      ['3gZDr9N1bjaHcflabeR7J8',"I'm This"],
+      ['7mimSbktNZYU0RBEjEUpPn','Remain in Me'],
+      ['1gNPP8TazAPuvq6R8oxxnU',"Shit I'm Dreaming"],
+    ];
+    const PLAYLISTS = [
+      ['Hindustani Classical','tabla · khaỳāl · Suresh Talwalkar','♬',
+       'My favourite instrument is the tabla, and the artist I find myself returning to most is Suresh Talwalkar.'],
+      ['404Bangers','rap · the first love','✶',
+       'Rap is one of my favourite genres. Before I got into the more niche forms of music, rap was the only thing I truly listened to.'],
+      ['Indian Indie Rock','PCRC and everything after','◐',
+       'Rock with Indian instruments is the perfect combination of everything I like. Peter Cat started this for me, but it has grown into so much more.'],
+    ];
+    document.getElementById('plgrid').innerHTML = PLAYLISTS.map(([name,meta,glyph,note],i)=>`
+      <article class="pl-card">
+        <div class="pl-cover"><span class="kick">Playlist · 0${i+1}</span><span class="glyph">${glyph}</span></div>
+        <div>
+          <h3 class="pl-name">${name}</h3>
+          <p class="pl-meta">${meta}</p>
+        </div>
+        <p class="pl-note">${note}</p>
+      </article>`).join('');
+
+    const sbar = document.getElementById('sbar');
+    const $ = (id)=>document.getElementById(id);
+    const fmt = (ms)=>{ const s=Math.max(0,Math.floor((ms||0)/1000)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+    let spCtrl=null, spReady=false, spDur=30000, wantPlay=false, autoplayed=false;
+    let spCur = TRACKS[Math.floor(Math.random()*TRACKS.length)];
+
+    function setLabels(){
+      $('sbTitle').textContent = spCur[1];
+      $('sbArtist').textContent = '— ' + SP_ARTIST;
+      $('sbLink').href = 'https://open.spotify.com/track/' + spCur[0];
+      $('sbFill').style.width = '0%';
+      $('sbTime').textContent = '0:00';
+    }
+    setLabels();
+
+    function loadTrack(i){ spCur = TRACKS[i]; setLabels(); if(spCtrl) spCtrl.loadUri('spotify:track:'+spCur[0]); }
+
+    window.onSpotifyIframeApiReady = (IFrameAPI)=>{
+      IFrameAPI.createController(
+        $('sp-embed'),
+        { uri:'spotify:track:'+spCur[0], width:'100%', height:152 },
+        (ctrl)=>{
+          spCtrl = ctrl;
+          ctrl.addListener('ready', ()=>{ spReady=true; if(wantPlay) ctrl.play(); });
+          ctrl.addListener('playback_update', (e)=>{
+            const d = e.data || {};
+            if(d.duration) spDur = d.duration;
+            $('sbFill').style.width = (spDur ? (d.position/spDur*100) : 0) + '%';
+            $('sbTime').textContent = fmt(d.position);
+            const playing = !d.isPaused;
+            sbar.classList.toggle('playing', playing);
+            $('sbPlay').textContent = playing ? '❚❚' : '▶';
+          });
+        }
+      );
+    };
+    (function(){ const s=document.createElement('script'); s.src='https://open.spotify.com/embed/iframe-api/v1'; s.async=true; document.body.appendChild(s); })();
+
+    $('sbPlay').addEventListener('click', ()=>{ if(spCtrl) spCtrl.togglePlay(); });
+    $('sbShuffle').addEventListener('click', ()=>{
+      let i; do { i = Math.floor(Math.random()*TRACKS.length); } while(TRACKS[i][0]===spCur[0] && TRACKS.length>1);
+      loadTrack(i); if(spCtrl) setTimeout(()=>spCtrl.play(), 350);
+    });
+    $('sbTrack').addEventListener('click', (e)=>{
+      if(!spCtrl) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      spCtrl.seek(Math.max(0, (e.clientX-r.left)/r.width * spDur/1000));
+    });
+
+    function show(id){
+      document.querySelectorAll('.view').forEach(v=>v.hidden = v.id!==id);
+      const onSpotify = id==='spotify';
+      sbar.hidden = !onSpotify;
+      if(onSpotify){
+        if(!autoplayed){ autoplayed=true; wantPlay=true; if(spReady && spCtrl) spCtrl.play(); }
+      } else if(spCtrl){ spCtrl.pause(); }
+      window.scrollTo(0,0);
+    }
+    document.querySelectorAll('[data-go]').forEach(b=>
+      b.addEventListener('click',()=>show(b.dataset.go)));
+
+    // a hard-edged "second box" pops up behind the button on hover —
+    // terminal-window style (paper fill + ink border, offset), and it
+    // tracks the cursor as you move across the button
+    document.querySelectorAll('#hero .pbtn').forEach((btn)=>{
+      const INK='#161514', PAPER='#ffffff';
+      const setBox=(ox,oy)=>{ btn.style.boxShadow = `${ox}px ${oy}px 0 -1px ${PAPER}, ${ox}px ${oy}px 0 0 ${INK}`; };
+      btn.addEventListener('pointerenter', ()=>{
+        btn.style.transition='transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s cubic-bezier(.34,1.56,.64,1), background .18s ease, color .18s ease';
+        btn.style.transform='translate(-5px,-5px)';
+        setBox(8,8);
+      });
+      btn.addEventListener('pointermove', (e)=>{
+        const r=btn.getBoundingClientRect();
+        const dx=(e.clientX-(r.left+r.width/2))/r.width;
+        const dy=(e.clientY-(r.top+r.height/2))/r.height;
+        btn.style.transition='transform .08s ease, box-shadow .08s ease, background .18s ease, color .18s ease';
+        btn.style.transform=`translate(${(-2+dx*3).toFixed(1)}px, ${(-2+dy*3).toFixed(1)}px)`;
+        setBox((7-dx*5).toFixed(1), (7-dy*5).toFixed(1));
+      });
+      btn.addEventListener('pointerleave', ()=>{
+        btn.style.transition='transform .3s ease, box-shadow .3s ease, background .18s ease, color .18s ease';
+        btn.style.boxShadow=''; btn.style.transform='';
+      });
+    });
+
+    mountIntro(document.body, {
+      stroke:'#161514', weight:1.5,
+      skipFont:"'IBM Plex Mono', monospace",
+      onReveal:()=>document.body.classList.add('revealed')
+    });
+  </script>
+</body>
+</html>
