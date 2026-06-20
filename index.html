@@ -315,7 +315,9 @@
     <a class="sbar-link" id="sbLink" href="#" target="_blank" rel="noopener">preview · Spotify</a>
   </div>
 
-  <script src="assets/intro.js"></script>
+  <script src="assets/buddha-grid.js"></script>
+  <script src="assets/intro-ascii.js"></script>
+  <script src="assets/intro-init.js"></script>
   <script>
     const PROJECTS = [
       ['01','FPGA Audio Visualizer','Real-time spectrum rendering on programmable logic.'],
@@ -462,11 +464,6 @@
       });
     });
 
-    mountIntro(document.body, {
-      stroke:'#161514', weight:1.5,
-      skipFont:"'IBM Plex Mono', monospace",
-      onReveal:()=>document.body.classList.add('revealed')
-    });
   </script>
 </body>
 </html>
