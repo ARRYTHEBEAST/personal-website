@@ -115,6 +115,9 @@
     display:flex; align-items:flex-end; padding:12px;
   }
   .thumb span{font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint)}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block; border-radius:1px; background:#000}
+  .card-link{cursor:pointer; background:var(--paper)}
+  .card-link .thumb{padding:0; border:0}
   .card .num{font-size:12px; color:var(--faint); letter-spacing:.1em}
   .card h3{font-size:17px; font-weight:500; margin:0; letter-spacing:-.01em}
   .card p{font-size:13px; line-height:1.7; color:var(--faint); margin:0; font-style:italic}
@@ -254,6 +257,72 @@
         <p class="pcount">04 — selected work · drop in shots & notes anytime</p>
         <div class="grid" id="pgrid"></div>
         <p class="addrow"><b>+</b> add a project</p>
+      </div>
+    </section>
+
+    <!-- PROJECT DETAIL: FPGA Audio Visualizer -->
+    <section class="view" id="project-audiovis" hidden>
+      <div class="col" style="max-width:720px">
+        <button class="back" data-go="projects" style="margin-bottom:54px"><span class="arr">←</span> all projects</button>
+
+        <p style="font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:0">Project · 04</p>
+        <h1 style="font-size:clamp(28px,3.6vw,42px);font-weight:500;line-height:1.08;letter-spacing:-.02em;margin:10px 0 18px">FPGA Audio Visualizer</h1>
+        <p style="font-size:clamp(15px,1.15vw,17px);line-height:1.85;color:var(--muted);max-width:62ch;margin:0">A real-time audio visualizer i built on an FPGA for EE/CSE 371, with Ananya Tripathi. it listens to live audio and throws out a burst of 256 sine-wave spokes whose length tracks the sound's amplitude — louder means longer, warmer spokes — and the whole bloom drifts across the VGA screen in a slow figure-eight.</p>
+
+        <div style="margin:26px 0 44px;display:flex;gap:14px;flex-wrap:wrap">
+          <a class="pbtn" href="https://drive.google.com/file/d/1EZvOunqXCYh9OHuLq4vHk4nzWLucJPpF/view?usp=sharing" target="_blank" rel="noopener" style="text-decoration:none">watch the demo <span class="arr">→</span></a>
+        </div>
+
+        <figure style="margin:0 0 48px">
+          <img src="assets/page14-c.png" alt="The visualizer on a VGA display — a green spoke-flower on black"
+               style="width:100%;max-height:460px;object-fit:contain;display:block;background:#000;border:1px solid var(--ink);border-radius:2px">
+          <figcaption style="font-size:12px;color:var(--faint);font-style:italic;margin-top:10px">the visualizer on the VGA — a loud passage opening into a full spoke-flower.</figcaption>
+        </figure>
+
+        <div style="margin-bottom:42px">
+          <p style="font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0">01 · from audio to amplitude</p>
+          <p style="font-size:clamp(15px,1.15vw,17px);line-height:1.85;color:var(--muted);max-width:62ch;margin:14px 0 0">raw 24-bit audio runs through an <span style="color:var(--ink)">FIR filter</span> i carried over from the previous lab — a circular buffer plus a running accumulator, so each new sample only costs one add and one subtract instead of re-summing the whole window. i take the absolute value and keep the upper 8 bits as the amplitude.</p>
+        </div>
+
+        <div style="margin-bottom:42px">
+          <p style="font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0">02 · drawing lines, one pixel a cycle</p>
+          <p style="font-size:clamp(15px,1.15vw,17px);line-height:1.85;color:var(--muted);max-width:62ch;margin:14px 0 0">computing sine in hardware is expensive, so i precomputed one full cycle into a <span style="color:var(--ink)">256-entry ROM</span> with a small python script — and cosine is just the same table read 64 steps ahead. the spokes are drawn with <span style="color:var(--ink)">Bresenham's algorithm</span>, written as a three-state machine: idle latches the endpoints and deltas, draw emits one pixel per clock, and done fires the moment x reaches the end.</p>
+        </div>
+
+        <div style="margin-bottom:42px">
+          <p style="font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0">03 · the illustrator</p>
+          <p style="font-size:clamp(15px,1.15vw,17px);line-height:1.85;color:var(--muted);max-width:62ch;margin:14px 0 0">the illustrator sweeps 256 angles around a moving center and draws each spoke out to <span style="color:var(--ink)">amplitude · cos</span> and <span style="color:var(--ink)">amplitude · sin</span>, erasing the old spokes before the new ones land. i sketched it as a twelve-state machine before writing a line of verilog.</p>
+          <figure style="margin:24px 0 0">
+            <img src="assets/fig4-illustrator-fsm.png" alt="Hand-drawn 12-state FSM for the illustrator module"
+                 style="width:100%;display:block;background:var(--paper);border:1px solid var(--line);border-radius:2px">
+            <figcaption style="font-size:12px;color:var(--faint);font-style:italic;margin-top:10px">the illustrator's twelve states — idle, amp, the sin/cos lookups, erase, then draw.</figcaption>
+          </figure>
+        </div>
+
+        <div style="margin-bottom:42px">
+          <p style="font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0">04 · putting it together</p>
+          <p style="font-size:clamp(15px,1.15vw,17px);line-height:1.85;color:var(--muted);max-width:62ch;margin:14px 0 0">at the top level the audio CODEC feeds amp_read, and a timer nudges the center 24 times a second through two sine ROMs — one read at the counter, one at double — so the vertical axis swings twice as fast and the path traces a <span style="color:var(--ink)">figure-eight</span>. the top three amplitude bits pick the color, so it warms up as the music gets louder, with a floor of blue. SW9 wipes the framebuffer back to black.</p>
+          <figure style="margin:24px 0 0">
+            <img src="assets/fig5-top-level.png" alt="Hand-drawn top-level block diagram"
+                 style="width:100%;display:block;background:var(--paper);border:1px solid var(--line);border-radius:2px">
+            <figcaption style="font-size:12px;color:var(--faint);font-style:italic;margin-top:10px">top-level block diagram — audio_codec → amp_read → DE1_SoC → illustrator → line_drawer.</figcaption>
+          </figure>
+        </div>
+
+        <div>
+          <p style="font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0">05 · the result</p>
+          <p style="font-size:clamp(15px,1.15vw,17px);line-height:1.85;color:var(--muted);max-width:62ch;margin:14px 0 0">quiet audio is a small blue bud; loud audio opens into a green flower. it built clean on a Cyclone V — roughly 12.4k registers and four DSP blocks.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:24px">
+            <figure style="margin:0">
+              <img src="assets/vga-a.png" alt="Quiet audio — a small blue spoke" style="width:100%;display:block;background:#000;border:1px solid var(--ink);border-radius:2px">
+              <figcaption style="font-size:12px;color:var(--faint);font-style:italic;margin-top:10px">quiet — a small blue bud.</figcaption>
+            </figure>
+            <figure style="margin:0">
+              <img src="assets/vga-b.png" alt="Loud audio — a large green and blue spoke-flower" style="width:100%;display:block;background:#000;border:1px solid var(--ink);border-radius:2px">
+              <figcaption style="font-size:12px;color:var(--faint);font-style:italic;margin-top:10px">loud — the spokes lengthen and warm to green.</figcaption>
+            </figure>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -487,16 +556,18 @@
   <script src="assets/intro-ascii.js"></script>
   <script src="assets/intro-init.js"></script>
   <script>
+    // [num, title, desc, thumb?, view?] — a thumb+view makes the card a
+    // clickable case-study link (real image instead of the stripe placeholder).
     const PROJECTS = [
-      ['01','FPGA Audio Visualizer','Real-time spectrum rendering on programmable logic.'],
-      ['02','Autonomous Drone Control','Onboard flight stack with autonomous navigation.'],
-      ['03','HVAC Systems Maintenance Predictor','Predictive maintenance from sensor telemetry.'],
-      ['04','Altium Roland SP-404','A hardware sampler reimagined in Altium.'],
+      ['01','Autonomous Drone Control','Onboard flight stack with autonomous navigation.'],
+      ['02','HVAC Systems Maintenance Predictor','Predictive maintenance from sensor telemetry.'],
+      ['03','Altium Roland SP-404','A hardware sampler reimagined in Altium.'],
+      ['04','FPGA Audio Visualizer','Sine-wave spokes that bloom with the music, swept across a VGA screen.','assets/vga-b.png','project-audiovis'],
     ];
     const grid = document.getElementById('pgrid');
-    grid.innerHTML = PROJECTS.map(([n,t,d])=>`
-      <article class="card">
-        <div class="thumb"><span>project shot</span></div>
+    grid.innerHTML = PROJECTS.map(([n,t,d,thumb,view])=>`
+      <article class="card${view?' card-link':''}"${view?` data-go="${view}"`:''}>
+        <div class="thumb">${thumb?`<img src="${thumb}" alt="${t}">`:'<span>project shot</span>'}</div>
         <div class="num">${n}</div>
         <h3>${t}</h3>
         <p>${d}</p>
@@ -619,30 +690,33 @@
     document.querySelectorAll('[data-go]').forEach(b=>
       b.addEventListener('click',()=>show(b.dataset.go)));
 
-    // a hard-edged "second box" pops up behind the button on hover —
+    // a hard-edged "second box" pops up behind the element on hover —
     // terminal-window style (paper fill + ink border, offset), and it
-    // tracks the cursor as you move across the button
-    document.querySelectorAll('#hero .pbtn').forEach((btn)=>{
+    // tracks the cursor as you move across it. shared by the .pbtn action
+    // buttons and the clickable FPGA project card.
+    function wirePop(el){
+      if(el._popWired) return; el._popWired = true;
       const INK='#161514', PAPER='#ffffff';
-      const setBox=(ox,oy)=>{ btn.style.boxShadow = `${ox}px ${oy}px 0 -1px ${PAPER}, ${ox}px ${oy}px 0 0 ${INK}`; };
-      btn.addEventListener('pointerenter', ()=>{
-        btn.style.transition='transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s cubic-bezier(.34,1.56,.64,1), background .18s ease, color .18s ease';
-        btn.style.transform='translate(-5px,-5px)';
+      const setBox=(ox,oy)=>{ el.style.boxShadow = `${ox}px ${oy}px 0 -1px ${PAPER}, ${ox}px ${oy}px 0 0 ${INK}`; };
+      el.addEventListener('pointerenter', ()=>{
+        el.style.transition='transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s cubic-bezier(.34,1.56,.64,1), background .18s ease, color .18s ease';
+        el.style.transform='translate(-5px,-5px)';
         setBox(8,8);
       });
-      btn.addEventListener('pointermove', (e)=>{
-        const r=btn.getBoundingClientRect();
+      el.addEventListener('pointermove', (e)=>{
+        const r=el.getBoundingClientRect();
         const dx=(e.clientX-(r.left+r.width/2))/r.width;
         const dy=(e.clientY-(r.top+r.height/2))/r.height;
-        btn.style.transition='transform .08s ease, box-shadow .08s ease, background .18s ease, color .18s ease';
-        btn.style.transform=`translate(${(-2+dx*3).toFixed(1)}px, ${(-2+dy*3).toFixed(1)}px)`;
+        el.style.transition='transform .08s ease, box-shadow .08s ease, background .18s ease, color .18s ease';
+        el.style.transform=`translate(${(-2+dx*3).toFixed(1)}px, ${(-2+dy*3).toFixed(1)}px)`;
         setBox((7-dx*5).toFixed(1), (7-dy*5).toFixed(1));
       });
-      btn.addEventListener('pointerleave', ()=>{
-        btn.style.transition='transform .3s ease, box-shadow .3s ease, background .18s ease, color .18s ease';
-        btn.style.boxShadow=''; btn.style.transform='';
+      el.addEventListener('pointerleave', ()=>{
+        el.style.transition='transform .3s ease, box-shadow .3s ease, background .18s ease, color .18s ease';
+        el.style.boxShadow=''; el.style.transform='';
       });
-    });
+    }
+    document.querySelectorAll('.pbtn, .card-link').forEach(wirePop);
 
   </script>
 </body>
